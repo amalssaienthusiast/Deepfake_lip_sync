@@ -55,5 +55,16 @@ def get_mediapipe_service():  # type: ignore[return]
 
 @lru_cache(maxsize=1)
 def get_job_store():  # type: ignore[return]
-    from app.services.job_store import JobStore
-    return JobStore(client=get_redis_client())
+    """Return job store — Redis if available, in-memory fallback for dev."""
+    try:
+        from app.services.job_store import JobStore
+        client = get_redis_client()
+        client.ping()  # Test connection
+        return JobStore(client=client)
+    except Exception as exc:
+        # Fallback to in-memory store for local development
+        import structlog
+        logger = structlog.get_logger(__name__)
+        logger.warning("redis_unavailable_using_memory_store", error=str(exc))
+        from app.services.memory_store import InMemoryJobStore
+        return InMemoryJobStore()
