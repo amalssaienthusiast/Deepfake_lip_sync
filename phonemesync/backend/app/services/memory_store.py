@@ -85,6 +85,10 @@ class InMemoryJobStore:
             updated_at=datetime.fromisoformat(data["updated_at"]),
         )
 
+    def get_job(self, job_id: str) -> JobStatusResponse:
+        """Compatibility alias used by the status router."""
+        return self.get_status(job_id)
+
     def store_result(self, job_id: str, result_dict: dict[str, Any]) -> None:
         """Store synthesis result."""
         if job_id not in self._jobs:

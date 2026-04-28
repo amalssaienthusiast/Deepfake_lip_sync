@@ -65,6 +65,38 @@ class Wav2LipService:
         output_duration_seconds = max(audio_duration_seconds, video_duration_seconds, 1.0)
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if self._weights_path.exists():
+            import sys
+            import subprocess
+            
+            s3fd_dir = self._src_dir / "face_detection" / "detection" / "sfd"
+            s3fd_dir.mkdir(parents=True, exist_ok=True)
+            s3fd_link = s3fd_dir / "s3fd.pth"
+            if not s3fd_link.exists() and settings.face_detector_weights.exists():
+                s3fd_link.symlink_to(settings.face_detector_weights.resolve())
+
+            inference_script = self._src_dir / "inference.py"
+            cmd = [
+                sys.executable,
+                str(inference_script),
+                "--checkpoint_path", str(self._weights_path),
+                "--face", str(face_path),
+                "--audio", str(audio_path),
+                "--outfile", str(output_path),
+            ]
+            try:
+                subprocess.run(cmd, check=True)
+                return {
+                    "fps": frames_fps,
+                    "duration_seconds": round(output_duration_seconds, 4),
+                    "frame_count": max(1, int(math.ceil(output_duration_seconds * frames_fps))),
+                    "model_used": "wav2lip_gan",
+                    "output_path": str(output_path),
+                }
+            except subprocess.CalledProcessError as exc:
+                logger.error("wav2lip_inference_failed", error=str(exc))
+
         silent_video_path = output_path.with_name(f"{output_path.stem}.silent.mp4")
 
         self._write_video(
@@ -86,7 +118,7 @@ class Wav2LipService:
             "fps": frames_fps,
             "duration_seconds": round(output_duration_seconds, 4),
             "frame_count": max(1, int(math.ceil(output_duration_seconds * frames_fps))),
-            "model_used": "wav2lip_gan" if self._weights_path.exists() else "fallback",
+            "model_used": "fallback",
             "output_path": str(output_path),
         }
 
