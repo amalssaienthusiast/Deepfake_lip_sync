@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional, Union
 
 from pydantic import AnyUrl, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     # ── Validators ───────────────────────────────────────────────────────────
     @field_validator("cors_origins", mode="before")
     @classmethod
-    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
+    def parse_cors_origins(cls, v: Union[str, list[str]]) -> list[str]:
         """Accept a comma-separated string or a list."""
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",") if origin.strip()]
