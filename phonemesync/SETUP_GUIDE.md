@@ -1,117 +1,292 @@
-# PhonemeSync: Complete Setup & Execution Guide
-
-This guide walks you through the complete process of bringing the **PhonemeSync** project online locally. The project is split into a **Python/FastAPI Backend** (powered by Docker) and a **Next.js 14 Frontend**.
-
----
-
-## 1. Prerequisites
-
-Before starting, ensure you have the following installed on your machine (macOS/Linux):
-1. **Docker Desktop** (or Docker Engine + Docker Compose)
-2. **Node.js** (v18.x recommended)
-3. **pnpm** (`npm install -g pnpm`)
-4. **Git**
+# PhonemeSync — Complete Setup & Demo Guide
+> IBM Hackathon Edition | Works on macOS · Windows · Linux
 
 ---
 
-## 2. Backend Setup (Docker + ML Models)
+## Part 1: Prerequisites (All Platforms)
 
-The backend handles Wav2Lip GAN inference, Whisper transcription, SyncNet scoring, and MediaPipe landmark detection. It requires heavy ML weights to be downloaded manually before starting the Docker container.
+### 1.1 Software Requirements
 
-### Step 2.1: Environment Setup
-Navigate to the backend directory and copy the environment template:
+| Software | Version | Download |
+|---|---|---|
+| **Docker Desktop** | Latest | https://www.docker.com/products/docker-desktop |
+| **Node.js** | v18.x (not v16, not v20) | https://nodejs.org/en/download |
+| **pnpm** | Latest | `npm install -g pnpm` |
+| **Git** | Latest | https://git-scm.com/downloads |
+
+> [!IMPORTANT]
+> Docker Desktop must be running **before** any `docker compose` commands.
+
+---
+
+## Part 2: Platform-Specific Setup
+
+### 2.1 macOS Setup
+
+**Step 1 — Increase Docker Memory**
+1. Open **Docker Desktop** → ⚙️ **Settings** → **Resources**
+2. Set **Memory** to **6 GB** minimum (8 GB recommended)
+3. Click **Apply & Restart**
+
+**Step 2 — Verify tools**
+```bash
+docker --version       # Docker version 24+
+node --version         # v18.x
+npm install -g pnpm
+pnpm --version
+git --version
+```
+
+---
+
+### 2.2 Windows Setup
+
+**Step 1 — Enable WSL2 (if not done)**
+Open PowerShell as Administrator:
+```powershell
+wsl --install
+wsl --set-default-version 2
+```
+Restart your PC when prompted.
+
+**Step 2 — Increase WSL2 Memory** *(critical — default is 50% of RAM)*
+
+Create/edit the file `C:\Users\<YourUsername>\.wslconfig`:
+```ini
+[wsl2]
+memory=8GB
+processors=4
+```
+Then in PowerShell:
+```powershell
+wsl --shutdown
+```
+Then restart Docker Desktop.
+
+**Step 3 — Increase Docker Desktop Memory**
+1. Open **Docker Desktop** → ⚙️ **Settings** → **Resources** → **Advanced**
+2. Set **Memory** to **6 GB** minimum
+3. Click **Apply & Restart**
+
+**Step 4 — Verify tools in PowerShell or Git Bash**
+```powershell
+docker --version
+node --version    # must be v18.x
+npm install -g pnpm
+pnpm --version
+git --version
+```
+
+---
+
+### 2.3 Linux Setup
+
+**Step 1 — Install Docker Engine**
+```bash
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+**Step 2 — Install Docker Compose plugin**
+```bash
+sudo apt-get install docker-compose-plugin
+```
+
+**Step 3 — Linux has no memory VM cap** — Docker uses your real system RAM. Just ensure you have **6+ GB free** before running.
+
+---
+
+## Part 3: Project Setup (All Platforms)
+
+### 3.1 Clone the Repository
+```bash
+git clone https://github.com/amalssaienthusiast/Deepfake_lip_sync.git
+cd Deepfake_lip_sync/phonemesync
+```
+
+### 3.2 Download ML Model Weights
+
+> [!CAUTION]
+> Without these files the backend will start but ALL jobs will fail. This step is mandatory.
+
+You need **2 files**:
+
+| File | Size | What it does |
+|---|---|---|
+| `wav2lip_gan.pth` | ~436 MB | The main lip-sync GAN model |
+| `s3fd.pth` | ~86 MB | Face detection model |
+
+**Download links:**
+- `wav2lip_gan.pth` → https://github.com/Rudrabha/Wav2Lip/releases (Wav2Lip GAN checkpoint)
+- `s3fd.pth` → https://www.adrianbulat.com/downloads/python-fan/s3fd-619a316812.pth
+
+> Rename `s3fd-619a316812.pth` → `s3fd.pth` after downloading.
+
+**Place both files here:**
+```
+Deepfake_lip_sync/
+  phonemesync/
+    backend/
+      app/
+        ml/
+          weights/        ← PUT BOTH FILES HERE
+            wav2lip_gan.pth
+            s3fd.pth
+```
+
+```bash
+# Verify both files exist:
+ls phonemesync/backend/app/ml/weights/
+# Expected output: s3fd.pth   wav2lip_gan.pth
+```
+
+### 3.3 Configure the Backend Environment
 ```bash
 cd phonemesync/backend
 cp .env.example .env
 ```
+The defaults in `.env` work out of the box — no changes needed for local demo.
 
-### Step 2.2: Download ML Weights
-The backend expects specific model weights to be present in the `app/ml/weights/` directory.
-
-1. Create the weights directory:
-   ```bash
-   mkdir -p app/ml/weights
-   ```
-2. Download the required weights. 
-   - **Wav2Lip GAN (`wav2lip_gan.pth`)**: Download from the official Wav2Lip repository or your provided hackathon storage bucket.
-   - **Face Detection (`s3fd.pth`)**: Download the S3FD face detector model.
-3. Place both files inside the `phonemesync/backend/app/ml/weights/` folder.
-
-> **Important:** The Dockerfile uses a volume mount (`- ./app/ml/weights:/app/ml/weights`) so the container can access these large files without baking them into the image.
-
-### Step 2.3: Start the Backend Services
-With Docker Desktop running, start the API and the Redis job queue:
-
+### 3.4 Start the Backend
 ```bash
-# From inside the phonemesync/backend directory:
+# From inside phonemesync/backend/
 docker compose up -d --build
 ```
 
-This command will:
-1. Build the Python 3.11 API image.
-2. Download required system dependencies (ffmpeg, etc.).
-3. Start the Redis container for task queuing.
-4. Start the FastAPI server on port 8000.
+This will:
+1. Build the Python 3.11 Docker image (~5–10 min first time)
+2. Download Whisper `base` model (~140 MB) automatically
+3. Start FastAPI on `http://localhost:8000`
+4. Start Redis on port `6379`
 
-### Step 2.4: Verify Backend Health
-Once the containers are running, wait a few moments and verify the health check:
+**Wait ~30 seconds then verify:**
 ```bash
 curl http://localhost:8000/health
 ```
-You should receive: `{"status": "ok"}`.
+Expected response:
+```json
+{"status":"ok","models_loaded":true,"redis_connected":true}
+```
 
----
+> [!NOTE]
+> On first build, Docker downloads ~1 GB of Python packages and ML libraries. Subsequent starts take under 10 seconds.
 
-## 3. Frontend Setup (Next.js 14)
-
-The frontend is a Next.js 14 application using the App Router, Tailwind CSS, and Zustand.
-
-### Step 3.1: Environment Setup
-Navigate to the frontend directory:
+### 3.5 Start the Frontend
 ```bash
+# In a NEW terminal tab:
 cd phonemesync/frontend
-```
-*(The `.env.local` file was automatically generated during scaffolding and already points to `http://localhost:8000`)*.
-
-### Step 3.2: Install Dependencies
-If you haven't already, install the Node packages using `pnpm`:
-```bash
 pnpm install
-```
-
-### Step 3.3: Start the Development Server
-Start the Next.js local development server:
-```bash
 pnpm dev
 ```
-
-### Step 3.4: Open the App
-Open your browser and navigate to:
-**[http://localhost:3000](http://localhost:3000)**
-
-You should see the dark-themed PhonemeSync upload screen.
+Open your browser at **http://localhost:3000**
 
 ---
 
-## 4. How to Test the Pipeline
+## Part 4: How to Run a Demo
 
-1. **Upload Media**: On the frontend at `localhost:3000`, drag and drop a face image (e.g., a `.jpg` of a person looking forward) into the left box, and a speech audio file (`.wav` or `.mp3`) into the right box.
-2. **Synthesize**: Click the "Synthesize Lip Sync" button.
-3. **Watch Progress**: You will be redirected to the processing screen. The system will poll the backend every 2 seconds, displaying progress through the four ML stages:
-   - *Lip Synthesis (Wav2Lip)*
-   - *Phoneme Extraction (Whisper)*
-   - *Sync Scoring (SyncNet)*
-   - *Landmark Detection (MediaPipe)*
-4. **View Results**: Once complete, you will land on the Results dashboard. 
-   - You can watch the synchronized video side-by-side with the original.
-   - The lip bounding box and heatmap overlay will track the face.
-   - The **Phoneme Timeline** at the bottom will display individual phonemes, colored by viseme class, with heights corresponding to the AI's confidence in the lip synchronization at that exact millisecond.
+### 4.1 What makes a good demo input
+
+**Face video / image requirements:**
+- ✅ Clear frontal face (looking at camera)
+- ✅ Good lighting, no heavy shadows
+- ✅ Single person in frame
+- ✅ Formats: `.mp4`, `.jpg`, `.png`
+- ✅ Duration: 5–30 seconds (longer = slower)
+- ❌ Avoid: multiple faces, profile shots, dark/blurry images
+
+**Audio requirements:**
+- ✅ Clear speech, minimal background noise
+- ✅ Formats: `.mp3`, `.wav`
+- ✅ Duration should match or be shorter than video
+- ✅ 5–30 seconds is ideal for a demo
+
+### 4.2 Step-by-step demo flow
+
+1. **Open** `http://localhost:3000`
+2. **Drag** a face image or video into the **left drop zone**
+3. **Drag** an audio `.mp3` or `.wav` file into the **right drop zone**
+4. **Click** "Synthesize Lip Sync"
+5. You'll see a **live progress bar** cycling through 4 stages:
+   - 🔵 Lip Synthesis (Wav2Lip GAN) — 0→40%
+   - 🟢 Phoneme Extraction (Whisper) — 40→60%
+   - 🟠 Sync Scoring (SyncNet) — 60→80%
+   - 🟣 Landmark Detection (MediaPipe) — 80→100%
+6. Results screen shows:
+   - Side-by-side video comparison (original vs lip-synced)
+   - **PhonemeSync Timeline** — phoneme-by-phoneme sync confidence chart
+   - **SyncNet heatmap** overlay on the face
+
+### 4.3 Typical processing times (CPU only)
+
+| Input length | Approximate time |
+|---|---|
+| 5 seconds | ~1–2 minutes |
+| 15 seconds | ~3–5 minutes |
+| 30 seconds | ~8–12 minutes |
+
+> [!TIP]
+> For a live hackathon demo, prepare a **pre-processed result** to show instantly. Submit a job in advance, let it finish, and use that URL for your live presentation. Then show the upload flow as a secondary demo.
+
+### 4.4 IBM Judge Demo Script
+
+**Suggested talking points during demo:**
+
+1. **"This is the Upload Screen"** — Point out the drag-and-drop UX, dual file upload
+2. **"We're now submitting to our FastAPI backend"** — Show the network tab briefly
+3. **"This is real-time polling"** — The progress bar is polling `/api/v1/status/{job_id}` every 2 seconds
+4. **"Four ML stages run in sequence"** — Explain: Wav2Lip GAN → OpenAI Whisper → SyncNet → MediaPipe
+5. **"PhonemeSync Timeline"** — This is the novel contribution: per-phoneme sync confidence mapped to viseme classes
+6. **"SyncNet heatmap"** — Frame-by-frame lip sync confidence overlay
 
 ---
 
-## 5. Troubleshooting Common Issues
+## Part 5: Troubleshooting
 
-- **`NoFaceDetectedError`**: If the Wav2Lip inference fails with this error, ensure the uploaded image/video has a clear, well-lit face looking at the camera.
-- **Docker Build Fails on NLTK/OpenCV**: The Dockerfile installs necessary `libgl1` and `ffmpeg` libraries. Ensure you have a stable internet connection during the initial `docker compose build`.
-- **CORS Errors in Browser**: If the frontend console shows CORS errors, ensure the Next.js `rewrites` are working properly (they proxy `/api/*` to `localhost:8000/api/*`). The frontend should make calls to `/api/v1/process`.
-- **Canvas Overlay Misaligned**: The heatmap overlay relies on `ResizeObserver`. If the browser window is rapidly resized during playback, pause and play the video to trigger a coordinate refresh.
+| Error | Cause | Fix |
+|---|---|---|
+| `ERR_CONNECTION_REFUSED` on port 8000 | Docker not running or API crashed | Run `docker compose up -d` from `backend/` |
+| `exit -9` / OOM kill | Docker VM out of memory | Increase Docker memory to 6 GB+ |
+| `wav2lip_weights_missing` | `.pth` files not in `app/ml/weights/` | Download and place both `.pth` files |
+| `Face not detected` error | Face not visible in video/image | Use a clear frontal face photo |
+| Health check shows `models_loaded: false` | Whisper model still downloading | Wait 60 seconds and retry |
+| CORS error in browser console | Frontend URL not in CORS list | Check `CORS_ORIGINS` in `docker-compose.yml` |
+| `pnpm: command not found` | pnpm not installed | Run `npm install -g pnpm` |
+
+### Check backend logs anytime:
+```bash
+cd phonemesync/backend
+docker compose logs --tail=50 api
+```
+
+### Restart everything cleanly:
+```bash
+cd phonemesync/backend
+docker compose restart api
+```
+
+### Full reset (if something is very broken):
+```bash
+cd phonemesync/backend
+docker compose down --volumes
+docker compose up -d --build
+```
+
+---
+
+## Part 6: Quick Reference
+
+```bash
+# ── BACKEND ─────────────────────────────────
+cd phonemesync/backend
+docker compose up -d --build      # start (first time)
+docker compose up -d              # start (subsequent)
+docker compose logs --tail=30 api # check logs
+docker compose down               # stop
+curl http://localhost:8000/health # verify
+
+# ── FRONTEND ────────────────────────────────
+cd phonemesync/frontend
+pnpm install    # first time only
+pnpm dev        # start dev server → http://localhost:3000
+```
