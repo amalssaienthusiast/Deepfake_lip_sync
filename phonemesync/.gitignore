@@ -17,10 +17,6 @@ build/
 backend/app/ml/weights/*.pth
 backend/app/ml/weights/*.pt
 backend/app/ml/weights/*.bin
-
-# Wav2Lip source (cloned separately)
-backend/app/ml/wav2lip_src/
-
 # Temp files
 backend/tmp/
 tmp/
