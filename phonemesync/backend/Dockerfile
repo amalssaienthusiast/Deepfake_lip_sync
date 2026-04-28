@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libxrender-dev \
     libglib2.0-0 \
-    libgl1-mesa-glx \
+    libgl1 \
     git \
     wget \
     curl \
@@ -17,7 +17,7 @@ WORKDIR /app
 
 # ── Python dependencies (cached layer) ───────────────────────────────────────
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+RUN pip install --no-cache-dir --upgrade pip "setuptools<70" wheel \
     && pip install --no-cache-dir -r requirements.txt
 
 # ── NLTK data for CMU pronunciation dictionary ────────────────────────────────

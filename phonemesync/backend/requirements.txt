@@ -27,7 +27,7 @@ face-alignment==1.4.1
 batch-face==1.5.3
 
 # Whisper
-openai-whisper==20231117
+openai-whisper
 tiktoken==0.6.0
 
 # Phoneme mapping
