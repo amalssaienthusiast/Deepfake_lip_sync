@@ -18,7 +18,7 @@ services:
       - WAV2LIP_WEIGHTS=/app/app/ml/weights/wav2lip_gan.pth
       - FACE_DETECTOR_WEIGHTS=/app/app/ml/weights/s3fd.pth
       - WHISPER_MODEL_SIZE=base
-      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+      - CORS_ORIGINS=["http://localhost:3000","http://localhost:3001"]
     volumes:
       # Model weights (read-only) — populate with: scripts/download_weights.sh
       - ./app/ml/weights:/app/app/ml/weights:ro
