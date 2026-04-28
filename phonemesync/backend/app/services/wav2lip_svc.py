@@ -47,9 +47,9 @@ class Wav2LipService:
             "--checkpoint_path", str(self.weights_path),
             "--face", str(face_path),
             "--audio", str(audio_path),
-            "--outfile", str(output_path),
-            "--face_det_batch_size", "4",
-            "--wav2lip_batch_size", "32",
+            "--face_det_batch_size", "1",
+            "--wav2lip_batch_size", "8",
+            "--resize_factor", "2",
         ]
 
         # Merge stderr into stdout so we never lose crash output
