@@ -9,7 +9,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-import structlog
+import structlog #type:ignore
 
 from app.config import settings
 from app.ml.phoneme_map import get_viseme_class, get_viseme_color
@@ -21,14 +21,14 @@ class WhisperService:
     """Transcribes audio and produces a phoneme-to-viseme timeline."""
 
     def __init__(self) -> None:
-        import nltk
+        import nltk #type:ignore
         nltk.download("cmudict", quiet=True)
 
-        import whisper
+        import whisper #type:ignore
         self._model = whisper.load_model(settings.whisper_model_size)
         logger.info("whisper_loaded", size=settings.whisper_model_size)
 
-        import pronouncing
+        import pronouncing #type:ignore
         self._pronouncing = pronouncing
 
     async def extract_phoneme_timeline(
@@ -39,7 +39,7 @@ class WhisperService:
         )
 
     def _extract_sync(self, audio_path: Path, fps: float) -> list[dict[str, Any]]:
-        import whisper
+        import whisper #type:ignore
 
         audio = whisper.load_audio(str(audio_path))
         result = self._model.transcribe(
