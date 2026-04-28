@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google Fonts ────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Design Tokens ───────────────────────────────────────────────────────── */
+:root {
+  --bg-primary:    #0F172A;
+  --bg-secondary:  #1E293B;
+  --bg-card:       #1E293B;
+  --border:        #334155;
+  --text-primary:  #F1F5F9;
+  --text-secondary: #94A3B8;
+  --accent:        #6366F1;
+  --accent-glow:   rgba(99, 102, 241, 0.2);
+  --success:       #22C55E;
+  --warning:       #EAB308;
+  --danger:        #EF4444;
+}
+
+/* ── Base Reset ──────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+
+html, body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Grid background (upload page) ──────────────────────────────────────── */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Glow pulse (drag-over dropzone, active stage) ───────────────────────── */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  50%       { box-shadow: 0 0 20px 4px var(--accent-glow); }
+}
+.glow-active { animation: glow-pulse 2s ease-in-out infinite; }
+
+/* ── Processing pulsing radial background ────────────────────────────────── */
+@keyframes processing-bg {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.6; }
+}
+.processing-bg-pulse { animation: processing-bg 2.5s ease-in-out infinite; }
+
+/* ── Fade in ─────────────────────────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fade-in 0.4s ease forwards; }
+
+/* ── Stage pill active pulse ────────────────────────────────────────────── */
+@keyframes stage-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+.stage-active { animation: stage-pulse 1.2s ease-in-out infinite; }
+
+/* ── Monospace for technical values ──────────────────────────────────────── */
+.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* ── Canvas timeline container ───────────────────────────────────────────── */
+.timeline-canvas-wrap {
+  position: relative;
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+/* ── Video container for heatmap overlay ────────────────────────────────── */
+.video-wrap {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+.video-wrap canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}

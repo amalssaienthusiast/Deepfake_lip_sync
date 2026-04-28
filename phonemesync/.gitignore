@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+*.env.local
+
+# Model weights (large files — mount as volumes)
+backend/app/ml/weights/*.pth
+backend/app/ml/weights/*.pt
+backend/app/ml/weights/*.bin
+
+# Wav2Lip source (cloned separately)
+backend/app/ml/wav2lip_src/
+
+# Temp files
+backend/tmp/
+tmp/
+*.mp4
+*.wav
+*.mp3
+
+# Samples (test media)
+samples/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node (frontend)
+node_modules/
+.next/
+frontend/.env.local
