@@ -5,6 +5,8 @@ Never raise generic Exception in service code — use one of these.
 """
 from __future__ import annotations
 
+from typing import Optional
+
 
 class PhonemeSyncBaseError(Exception):
     """Base class for all PhonemeSync errors."""
@@ -12,7 +14,7 @@ class PhonemeSyncBaseError(Exception):
     message: str = "An unexpected error occurred."
     status_code: int = 500
 
-    def __init__(self, message: str | None = None) -> None:
+    def __init__(self, message: Optional[str] = None) -> None:
         self.message = message or self.__class__.message
         super().__init__(self.message)
 

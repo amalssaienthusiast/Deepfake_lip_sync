@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import enum
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -78,8 +78,8 @@ class JobStatusResponse(PhonemeySyncBase):
     job_id: str
     status: JobStatus
     progress: int = Field(default=0, ge=0, le=100, description="0–100 progress %")
-    stage: ProcessingStage | None = None
-    error: str | None = None
+    stage: Optional[ProcessingStage] = None
+    error: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -190,7 +190,7 @@ class ErrorResponse(PhonemeySyncBase):
 
     error: str = Field(..., description="Machine-readable error code")
     message: str = Field(..., description="Human-readable error description")
-    job_id: str | None = None
+    job_id: Optional[str] = None
 
 
 # ── Health Check ──────────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import cv2
 import numpy as np
@@ -45,7 +45,7 @@ class MediaPipeService:
         cap  = cv2.VideoCapture(str(video_path))
         fps  = cap.get(cv2.CAP_PROP_FPS) or 25.0
         results_list: list[dict[str, Any]] = []
-        prev_entry: dict[str, Any] | None  = None
+        prev_entry: Optional[dict[str, Any]]  = None
         frame_idx = 0
 
         while True:

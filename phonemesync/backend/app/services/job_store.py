@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 import redis
 import structlog
@@ -72,9 +72,9 @@ class JobStore:
         self,
         job_id: str,
         status: JobStatus,
-        stage: ProcessingStage | None,
+        stage: Optional[ProcessingStage],
         progress: int,
-        error: str | None = None,
+        error: Optional[str] = None,
     ) -> None:
         """Update job status, stage, and progress atomically."""
         existing = self._get_meta_raw(job_id)
@@ -114,7 +114,7 @@ class JobStore:
         )
         logger.info("result_stored", job_id=job_id)
 
-    def get_result(self, job_id: str) -> dict[str, Any] | None:
+    def get_result(self, job_id: str) -> Optional[dict[str, Any]]:
         """Return result dict or None if not yet available."""
         raw = self._r.get(_result_key(job_id))
         return json.loads(raw) if raw else None
@@ -128,7 +128,7 @@ class JobStore:
         )
         logger.info("phonemes_stored", job_id=job_id)
 
-    def get_phonemes(self, job_id: str) -> dict[str, Any] | None:
+    def get_phonemes(self, job_id: str) -> Optional[dict[str, Any]]:
         """Return phonemes dict or None if not yet available."""
         raw = self._r.get(_phonemes_key(job_id))
         return json.loads(raw) if raw else None
@@ -143,6 +143,6 @@ class JobStore:
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
-    def _get_meta_raw(self, job_id: str) -> dict[str, Any] | None:
+    def _get_meta_raw(self, job_id: str) -> Optional[dict[str, Any]]:
         raw = self._r.get(_meta_key(job_id))
         return json.loads(raw) if raw else None
