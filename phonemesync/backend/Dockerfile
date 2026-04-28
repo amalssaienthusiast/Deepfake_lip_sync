@@ -31,6 +31,9 @@ COPY app/ ./app/
 # Contains: wav2lip_gan.pth (124 MB), s3fd.pth (face detector)
 RUN mkdir -p /app/app/ml/weights
 
+# ── Wav2Lip temp dir — must be writable at inference time ─────────────────────
+RUN mkdir -p /app/app/ml/wav2lip_src/temp
+
 # ── Tmp storage for uploads/outputs ──────────────────────────────────────────
 RUN mkdir -p /app/tmp/uploads /app/tmp/outputs
 

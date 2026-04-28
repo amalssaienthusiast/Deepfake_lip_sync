@@ -6,15 +6,15 @@ Uses subprocess to isolate the heavy inference environment.
 from __future__ import annotations
 
 import asyncio
-import os
-import cv2
+import shutil
+import cv2 #type:ignore
 from pathlib import Path
 from typing import Any
 
-import structlog
+import structlog #type:ignore
 
 from app.config import settings
-from app.exceptions import InferenceTooLongError, NoFaceDetectedError, PhonemeSyncBaseError
+from app.exceptions import NoFaceDetectedError, PhonemeSyncBaseError
 
 logger = structlog.get_logger(__name__)
 
@@ -25,9 +25,11 @@ class Wav2LipService:
     def __init__(self) -> None:
         self.wav2lip_dir = settings.wav2lip_src_dir
         self.weights_path = settings.wav2lip_weights
+        # Wav2Lip writes intermediate files to a `temp/` subdir.
+        # It MUST be writable by the container user — create it here.
         self.temp_dir = self.wav2lip_dir / "temp"
         self.temp_dir.mkdir(parents=True, exist_ok=True)
-        
+
         if not self.weights_path.exists():
             logger.warning("wav2lip_weights_missing", path=str(self.weights_path))
 
@@ -35,36 +37,45 @@ class Wav2LipService:
         """Run the Wav2Lip inference pipeline."""
         logger.info("wav2lip_starting", face=str(face_path), audio=str(audio_path))
 
-        # Check audio length (for InferenceTooLongError)
-        # Using a simple check if possible, or assume it's valid.
+        if not self.weights_path.exists():
+            raise PhonemeSyncBaseError(
+                message=f"Wav2Lip weights not found at {self.weights_path}. Download wav2lip_gan.pth and place it in app/ml/weights/."
+            )
 
         cmd = [
-            "python", "inference.py",
+            "python", "-u", "inference.py",
             "--checkpoint_path", str(self.weights_path),
             "--face", str(face_path),
             "--audio", str(audio_path),
             "--outfile", str(output_path),
-            "--face_det_batch_size", "8",
-            "--wav2lip_batch_size", str(settings.wav2lip_batch_size),
+            "--face_det_batch_size", "4",
+            "--wav2lip_batch_size", "32",
         ]
-        
+
+        # Merge stderr into stdout so we never lose crash output
         process = await asyncio.create_subprocess_exec(
             *cmd,
             cwd=str(self.wav2lip_dir),
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            env={
+                **__import__('os').environ,
+                "PYTHONUNBUFFERED": "1",
+            },
         )
-        
-        stdout, stderr = await process.communicate()
-        
+
+        stdout, _ = await process.communicate()
+        output_text = stdout.decode(errors="replace")
+
         if process.returncode != 0:
-            err_output = stderr.decode()
-            logger.error("wav2lip_failed", stderr=err_output)
-            if "Face not detected" in err_output:
+            logger.error("wav2lip_failed", output=output_text[-500:], code=process.returncode)
+            if "Face not detected" in output_text:
                 raise NoFaceDetectedError("Wav2Lip could not detect a face in the input video.")
             raise PhonemeSyncBaseError(
-                message=f"Wav2Lip inference failed: {err_output[-200:]}"
+                message=f"Wav2Lip failed (exit {process.returncode}): {output_text[-300:]}"
             )
+
+        logger.info("wav2lip_stdout", tail=output_text[-200:])
 
         # Get video properties
         fps = 25.0
@@ -81,7 +92,7 @@ class Wav2LipService:
             logger.warning("failed_to_probe_video", error=str(e))
 
         logger.info("wav2lip_complete", output=str(output_path), fps=fps, duration=duration_seconds)
-        
+
         return {
             "fps": fps,
             "duration_seconds": duration_seconds,
