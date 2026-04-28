@@ -63,8 +63,7 @@ class Wav2LipService:
             if "Face not detected" in err_output:
                 raise NoFaceDetectedError("Wav2Lip could not detect a face in the input video.")
             raise PhonemeSyncBaseError(
-                message=f"Wav2Lip inference failed: {err_output[-200:]}",
-                status_code=500
+                message=f"Wav2Lip inference failed: {err_output[-200:]}"
             )
 
         # Get video properties
