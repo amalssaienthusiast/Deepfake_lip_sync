@@ -290,3 +290,35 @@ cd phonemesync/frontend
 pnpm install    # first time only
 pnpm dev        # start dev server → http://localhost:3000
 ```
+
+---
+
+## Part 7: Production Deployment (Vercel + Container Host)
+
+PhonemeSync requires two deployments:
+
+- **Frontend** → Vercel
+- **Backend** → a container host with Redis (Railway / Render / Fly)
+
+### 7.1 Backend (FastAPI + Redis)
+
+1. Provision **Redis** and a persistent volume for `/app/tmp`.
+2. Upload model weights to a volume mounted at `/app/app/ml/weights`:
+   - `wav2lip_gan.pth`
+   - `s3fd.pth`
+3. Set environment variables:
+   - `APP_ENV=production`
+   - `REDIS_URL=redis://...`
+   - `UPLOAD_DIR=/app/tmp/uploads`
+   - `OUTPUT_DIR=/app/tmp/outputs`
+   - `DEVICE=cpu` (or `cuda` if GPU)
+   - `CORS_ORIGINS=https://your-vercel-domain.vercel.app`
+4. Deploy using the existing `backend/Dockerfile`.
+5. Verify `GET /health` returns `"status":"ok"` and that `/outputs/...` URLs load.
+
+### 7.2 Frontend (Vercel)
+
+1. Set **Root Directory** to `phonemesync/frontend`.
+2. Use **Node.js 18** and **pnpm**.
+3. Add `NEXT_PUBLIC_API_URL=https://your-backend.example.com`.
+4. Deploy, then upload a sample face + audio to validate end-to-end.

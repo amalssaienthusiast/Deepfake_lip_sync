@@ -20,6 +20,19 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Environment Variables
+
+Create `.env.local` (or use `.env.example`) and set:
+
+- `NEXT_PUBLIC_API_URL` — base URL of the FastAPI backend (no `/api/v1` suffix)
+- Optional overrides: `NEXT_PUBLIC_POLL_INTERVAL_MS`, `NEXT_PUBLIC_MAX_VIDEO_SIZE_MB`, `NEXT_PUBLIC_MAX_AUDIO_SIZE_MB`
+
+## Vercel Deployment (Monorepo)
+
+1. Set the project **Root Directory** to `phonemesync/frontend`.
+2. Use **Node.js 18** and **pnpm**.
+3. Add `NEXT_PUBLIC_API_URL` in Vercel Environment Variables.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
