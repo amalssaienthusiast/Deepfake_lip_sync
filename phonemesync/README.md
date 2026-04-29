@@ -40,6 +40,36 @@ docker compose up --build
 curl http://localhost:8000/health
 ```
 
+## Production Deployment (Vercel + Container Host)
+
+PhonemeSync ships as two services:
+
+- **Frontend** (Next.js) → deploy on **Vercel**
+- **Backend** (FastAPI + Redis + ML) → deploy on a container host (Railway/Render/Fly)
+
+### Backend (container host)
+
+1. Provision **Redis** and a persistent volume for `/app/tmp`.
+2. Ensure **model weights** are available at runtime:
+   - `wav2lip_gan.pth`
+   - `s3fd.pth`
+3. Set environment variables:
+   - `APP_ENV=production`
+   - `REDIS_URL` (from your Redis service)
+   - `UPLOAD_DIR=/app/tmp/uploads`
+   - `OUTPUT_DIR=/app/tmp/outputs`
+   - `DEVICE=cpu` (or `cuda` if you have a GPU)
+   - `CORS_ORIGINS=https://your-vercel-domain.vercel.app`
+4. Deploy the existing `backend/Dockerfile` image.
+5. Verify `GET /health` and that `/outputs/...` files are accessible.
+
+### Frontend (Vercel)
+
+1. Set **Root Directory** to `phonemesync/frontend`.
+2. Use **Node 18** with **pnpm**.
+3. Add `NEXT_PUBLIC_API_URL=https://your-backend.example.com`.
+4. Deploy and verify uploads complete end-to-end.
+
 ## API Endpoints
 
 | Method | Path | Description |
